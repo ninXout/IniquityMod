@@ -12,15 +12,6 @@ using namespace geode::prelude;
 
 CCSprite* gif;
 
-void GIFframe(int frame) {
-    std::string resource = Mod::get()->getResourcesDir().string();
-    std::stringstream nstr;
-    nstr << resource << "/";
-    nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
-    nstr << ".png";
-    gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
-}
-
 void addTransparentBG(CCNode* layer) {
 	auto winSize = CCDirector::sharedDirector()->getWinSize();
         
@@ -146,6 +137,15 @@ class $modify(GIFLayer, MenuLayer) {
         this->schedule(schedule_selector(GIFLayer::updateGIF));
 
         return true;
+    }
+
+    void GIFframe(int frame) {
+        std::string resource = Mod::get()->getResourcesDir().string();
+        std::stringstream nstr;
+        nstr << resource << "/";
+        nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
+        nstr << ".png";
+        gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
     }
 
     void updateGIF(CCObject*, float) {
