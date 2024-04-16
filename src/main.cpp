@@ -10,6 +10,17 @@ using namespace geode::prelude;
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/modify/LevelBrowserLayer.hpp>
 
+CCSprite* gif;
+
+void GIFframe(int frame) {
+    std::string resource = Mod::get()->getResourcesDir().string();
+    std::stringstream nstr;
+    nstr << resource << "/";
+    nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
+    nstr << ".png";
+    gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
+}
+
 void addTransparentBG(CCNode* layer) {
 	auto winSize = CCDirector::sharedDirector()->getWinSize();
         
@@ -91,7 +102,57 @@ class $modify(LevelBrowserLayer) {
 
 class $modify(CCLayerColor) {
 	bool initWithColor(cocos2d::_ccColor4B const& yk, float f1, float f2) {
-		if (f1 != 569 && f2 != 320) return CCLayerColor::initWithColor({0,0,0,0},0,0);
+        log::info("f1 is {} and f2 is {}", f1, f2);
+		if ((f1 != 569 && f2 != 320) && (f1 != 358 && f2 != 40)) return CCLayerColor::initWithColor({0,0,0,0},0,0);
 		return CCLayerColor::initWithColor(yk, f1, f2);
 	}
+};
+
+#include <Geode/modify/LoadingLayer.hpp>
+
+class $modify(LoadingLayer) {
+    bool init(bool fromReload) {
+        if (!LoadingLayer::init(fromReload)) return false;
+
+
+
+        return true;
+    }
+};
+
+#include <Geode/modify/MenuLayer.hpp>
+
+class $modify(GIFLayer, MenuLayer) {
+    double ss = 0.f;
+    bool backsweep = false;
+
+    bool init() {
+        gif = CCSprite::create("00.png"_spr);
+        for (int i = 0; i < 53; i++) GIFframe(i); // preload i think
+
+        if (!MenuLayer::init()) return false;
+
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
+
+        gif->setScaleY(winSize.height / gif->getContentSize().height);
+        gif->setScaleX(winSize.width / gif->getContentSize().width);
+        gif->setPositionX(winSize.width / 2);
+        gif->setPositionY(winSize.height / 2);
+        
+        auto node = ((CCNode*)this->getChildren()->objectAtIndex(0));
+        
+        node->addChild(gif, 100);
+
+        this->schedule(schedule_selector(GIFLayer::updateGIF));
+
+        return true;
+    }
+
+    void updateGIF() {
+        m_fields->ss += backsweep ? -(1.f / 2.f) : (1.f / 2.f);
+        if (m_fields->ss > 53) backsweep = true;
+        if (m_fields->ss < 1) backsweep = false;
+        
+        GIFframe((int)m_fields->ss);
+    }
 };

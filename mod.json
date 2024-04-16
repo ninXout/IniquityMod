@@ -9,5 +9,10 @@
 	"id": "ninxout.iniquitymod",
 	"name": "iniquityMod",
 	"developer": "ninXout",
-	"description": ""
+	"description": "",
+	"resources": {
+		"files": [
+			"resources/MenuGIF/*.png"
+		]
+	}
 }
