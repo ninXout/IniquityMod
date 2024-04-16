@@ -148,7 +148,7 @@ class $modify(GIFLayer, MenuLayer) {
         return true;
     }
 
-    void updateGIF() {
+    void updateGIF(CCObject*, float) {
         m_fields->ss += backsweep ? -(1.f / 2.f) : (1.f / 2.f);
         if (m_fields->ss > 53) backsweep = true;
         if (m_fields->ss < 1) backsweep = false;
