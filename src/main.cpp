@@ -12,6 +12,15 @@ using namespace geode::prelude;
 
 CCSprite* gif;
 
+void GIFframe(int frame) {
+    std::string resource = Mod::get()->getResourcesDir().string();
+    std::stringstream nstr;
+    nstr << resource << "/";
+    nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
+    nstr << ".png";
+    gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
+}
+
 void addTransparentBG(CCNode* layer) {
 	auto winSize = CCDirector::sharedDirector()->getWinSize();
         
@@ -134,21 +143,12 @@ class $modify(GIFLayer, MenuLayer) {
         
         node->addChild(gif, 100);
 
-        this->schedule(schedule_selector(GIFLayer::updateGIF));
+        CCNode::schedule(schedule_selector(GIFLayer::updateGIF));
 
         return true;
     }
 
-    void GIFframe(int frame) {
-        std::string resource = Mod::get()->getResourcesDir().string();
-        std::stringstream nstr;
-        nstr << resource << "/";
-        nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
-        nstr << ".png";
-        gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
-    }
-
-    void updateGIF(CCObject*, float) {
+    void updateGIF(float) {
         m_fields->ss += backsweep ? -(1.f / 2.f) : (1.f / 2.f);
         if (m_fields->ss > 53) backsweep = true;
         if (m_fields->ss < 1) backsweep = false;
