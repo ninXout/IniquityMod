@@ -24,7 +24,7 @@ void GIFframe(int frame) {
 void addTransparentBG(CCNode* layer) {
 	auto winSize = CCDirector::sharedDirector()->getWinSize();
         
-	auto bg = CCSprite::create("GJ_gradientBG.png");
+	auto bg = CCSprite::create("GJ_gradientBG-uhd.png");
 	auto bgSize = bg->getTextureRect().size;
 	bg->setAnchorPoint({ 0.0f, 0.0f });
 	bg->setScaleX((winSize.width + 10.0f) / bgSize.width);
