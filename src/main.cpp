@@ -79,12 +79,10 @@ class $modify(IniqMenuLayer, MenuLayer) {
 #include <Geode/modify/LevelCell.hpp>
 
 class $modify(LevelCell) {
-    bool init() {
-        if (!LevelCell::init()) return false;
+    void loadFromLevel(GJGameLevel* gj) {
+        LevelCell::loadFromLevel(gj);
 
-        getChildOfType<CCLayerColor>(this, 0)->setVisible(false); // TODO: mess with LevelCell::loadFromLevel to do custom stuff
-
-        return true;
+        getChildOfType<CCLayerColor>(this, 0)->setVisible(false);
     }
 
     void draw() {} // removes the stupid line between cells
