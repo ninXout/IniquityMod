@@ -2,157 +2,147 @@
 
 using namespace geode::prelude;
 
-#include <Geode/modify/EditLevelLayer.hpp>
-#include <Geode/modify/LevelInfoLayer.hpp>
-#include <Geode/modify/CreatorLayer.hpp>
-#include <Geode/modify/LeaderboardsLayer.hpp>
-#include <Geode/modify/LocalLevelManager.hpp>
-#include <Geode/modify/LevelSearchLayer.hpp>
-#include <Geode/modify/LevelBrowserLayer.hpp>
-
-CCSprite* gif;
-
-void GIFframe(int frame) {
-    std::string resource = Mod::get()->getResourcesDir().string();
-    std::stringstream nstr;
-    nstr << resource << "/";
-    nstr << std::setw(2) << std::setfill('0') << std::to_string(frame);
-    nstr << ".png";
-    gif->setTexture(CCTextureCache::sharedTextureCache()->addImage(nstr.str().c_str(), false));
-}
-
-void addTransparentBG(CCNode* layer) {
-	auto winSize = CCDirector::sharedDirector()->getWinSize();
-        
-	auto bg = CCSprite::create("GJ_gradientBG-uhd.png");
-	auto bgSize = bg->getTextureRect().size;
-	bg->setAnchorPoint({ 0.0f, 0.0f });
-	bg->setScaleX((winSize.width + 10.0f) / bgSize.width);
-	bg->setScaleY((winSize.height + 10.0f) / bgSize.height);
-	bg->setPosition({ -5.0f, -5.0f });
-	bg->setColor(ccc3(255, 255, 255));
-	
-	layer->addChild(bg, -2);
-}
-
-class $modify(EditLevelLayer) {
-	bool init(GJGameLevel* ed) {
-        EditLevelLayer::init(ed);
-        
-        addTransparentBG(this);
-        getChildByID("level-name-background")->setVisible(false);
-        getChildByID("description-background")->setVisible(false);
-
-        return true;
-    }
-};
-
-class $modify(LevelInfoLayer) {
-	bool init(GJGameLevel* level, bool challenge) {
-        LevelInfoLayer::init(level, challenge);
-        
-        addTransparentBG(this);
-
-        return true;
- 
-    }
-};
-
-class $modify(CreatorLayer) {
-	virtual bool init() {
-        CreatorLayer::init();
-
-        addTransparentBG(this);
-
-        return true;
-    }
-};
-
-class $modify(LeaderboardsLayer) {
-    bool init(LeaderboardState state) {
-        LeaderboardsLayer::init(state);
-
-        addTransparentBG(this);
-
-        return true;
-    }
-};
-
-class $modify(LevelSearchLayer) {
-	virtual bool init(int p0) {
-		LevelSearchLayer::init(p0);
-
-        addTransparentBG(this);
-        
-        return true;
-    }
-};
-
-class $modify(LevelBrowserLayer) {
-	bool init(GJSearchObject* search) {
-		LevelBrowserLayer::init(search);
-
-        addTransparentBG(this);
-
-        return true;
-    }
-};
-
-#include <Geode/modify/CCLayerColor.hpp>
-
-class $modify(CCLayerColor) {
-	bool initWithColor(cocos2d::_ccColor4B const& yk, float f1, float f2) {
-        log::info("f1 is {} and f2 is {}", f1, f2);
-		if ((f1 != 569 && f2 != 320) && (f1 != 358 && f2 != 40)) return CCLayerColor::initWithColor({0,0,0,0},0,0);
-		return CCLayerColor::initWithColor(yk, f1, f2);
-	}
-};
-
-#include <Geode/modify/LoadingLayer.hpp>
-
-class $modify(LoadingLayer) {
-    bool init(bool fromReload) {
-        if (!LoadingLayer::init(fromReload)) return false;
-
-
-
-        return true;
-    }
-};
-
 #include <Geode/modify/MenuLayer.hpp>
+#include <Geode/utils/web.hpp>
+#include <matjson.hpp>
+#include <fstream>
 
-class $modify(GIFLayer, MenuLayer) {
-    double ss = 0.f;
-    bool backsweep = false;
+class $modify(IniqMenuLayer, MenuLayer) {
+    void updatePack() {
+        web::WebRequest req = web::WebRequest();
+        EventListener<web::WebTask> thing;
+        thing.bind([this] (web::WebTask::Event* e) {
+            if (web::WebResponse* value = e->getValue()) {
+                auto thebytes = value->data();
+                //Loader::get()->getInstalledMod("geode.texture-loader")->getSavedValue<std::string>("")
+                std::filesystem::path packpath = Loader::get()->getInstalledMod("geode.texture-loader")->getConfigDir() / "packs" / "iniquity-pack.zip";
+
+                std::ofstream out(packpath.c_str(), std::ios::out | std::ios::binary);
+                out.write(reinterpret_cast<const char*>(thebytes.data()), thebytes.size());
+                out.close();
+
+                geode::createQuickPopup(
+                    "Iniquity",
+                    "Iniquity updated! Would you like to restart your game to update?",
+                    "No", "Yes",
+                    [](auto, bool btn2) {
+                        if (btn2) {
+                            geode::utils::game::restart();
+                        }
+                    }
+                );
+            } else if (e->isCancelled()) {
+                Notification::create("Iniquity could not download the latest version", geode::NotificationIcon::Error)->show();
+            }
+        });
+        auto task = req.post("https://github.com/ninXout/iniquity-pack/releases/latest/download/iniquity-pack.zip");
+        thing.setFilter(task);
+    }
+
+    void setMSSetting(std::string key) {
+        if (!Loader::get()->getInstalledMod("cgytrus.menu-shaders")->getSettingValue<bool>(key)) Loader::get()->getInstalledMod("cgytrus.menu-shaders")->setSettingValue<bool>(key, true);
+    }
 
     bool init() {
-        gif = CCSprite::create("00.png"_spr);
-        for (int i = 0; i < 53; i++) GIFframe(i); // preload i think
+        setMSSetting("show-search");
+        setMSSetting("show-play-level");
+        setMSSetting("show-level-browser");
+        setMSSetting("show-level-select");
+        setMSSetting("show-edit-level");
+        setMSSetting("show-creator");
+        setMSSetting("show-main");
 
         if (!MenuLayer::init()) return false;
 
-        auto winSize = CCDirector::sharedDirector()->getWinSize();
+        web::WebRequest req = web::WebRequest();
+        EventListener<web::WebTask> thing;
+        thing.bind([this] (web::WebTask::Event* e) {
+            if (web::WebResponse* value = e->getValue()) {
+                auto thejson = value->json().unwrap();
+                log::info("new pack version is {}", thejson["tag_name"].as_string());
+                if (Mod::get()->getSavedValue<std::string>("pack-version") != thejson["tag_name"].as_string()) {
+                    Mod::get()->setSavedValue<std::string>("pack-version", thejson["tag_name"].as_string());
+                    IniqMenuLayer::updatePack();
+                }
+            } else if (e->isCancelled()) {
+                Notification::create("Iniquity could not get the latest version", geode::NotificationIcon::Error)->show();
+            }
+        });
+        //auto task = req.post("https://api.github.com/repos/ninXout/iniquity-pack/releases/latest");
+        //thing.setFilter(task);
+        //IniqMenuLayer::updatePack();
 
-        gif->setScaleY(winSize.height / gif->getContentSize().height);
-        gif->setScaleX(winSize.width / gif->getContentSize().width);
-        gif->setPositionX(winSize.width / 2);
-        gif->setPositionY(winSize.height / 2);
-        
-        auto node = ((CCNode*)this->getChildren()->objectAtIndex(0));
-        
-        node->addChild(gif, 100);
+        return true;
+    }
+};
 
-        CCNode::schedule(schedule_selector(GIFLayer::updateGIF));
+#include <Geode/modify/LevelCell.hpp>
+
+class $modify(LevelCell) {
+    bool init() {
+        if (!LevelCell::init()) return false;
+
+        getChildOfType<CCLayerColor>(this, 0)->setVisible(false); // TODO: mess with LevelCell::loadFromLevel to do custom stuff
 
         return true;
     }
 
-    void updateGIF(float) {
-        m_fields->ss += backsweep ? -(1.f / 2.f) : (1.f / 2.f);
-        if (m_fields->ss > 53) backsweep = true;
-        if (m_fields->ss < 1) backsweep = false;
-        
-        GIFframe((int)m_fields->ss);
+    void draw() {} // removes the stupid line between cells
+};
+
+#include <Geode/modify/GJListLayer.hpp>
+
+class $modify(GJListLayer) {
+    bool init(BoomListView* p0, char const* p1, cocos2d::ccColor4B p2, float p3, float p4, int p5) {
+        if (!GJListLayer::init(p0, p1, {0, 0, 0, 100}, p3, p4, p5)) return false;
+
+        this->getChildByID("left-border")->setVisible(false);
+        this->getChildByID("right-border")->setVisible(false);
+        this->getChildByID("bottom-border")->setVisible(false);
+        this->getChildByID("top-border")->setVisible(false);
+
+        return true;
     }
+};
+
+#include <Geode/modify/InfoLayer.hpp>
+
+class $modify(InfoLayer) {
+    bool init(GJGameLevel* p0, GJUserScore* p1, GJLevelList* p2) {
+        if (!InfoLayer::init(p0, p1, p2)) return false;
+
+        static_cast<CCSprite*>(m_mainLayer->getChildByID("desc-background"))->setColor(ccc3(0, 0, 0));
+        static_cast<CCSprite*>(m_mainLayer->getChildByID("desc-background"))->setOpacity(150.f);
+
+        return true;
+    }
+};
+
+#include <Geode/modify/GJCommentListLayer.hpp>
+
+class $modify(GJCommentListLayer) {
+    bool init(BoomListView* listView, char const* title, cocos2d::ccColor4B color, float width, float height, bool blueBorder) {
+        color = {0, 0, 0, 0};
+
+        if (!GJCommentListLayer::init(listView, title, color, width, height, blueBorder)) return false;
+
+        this->getChildByID("left-border")->setVisible(false);
+        this->getChildByID("right-border")->setVisible(false);
+        this->getChildByID("bottom-border")->setVisible(false);
+        this->getChildByID("top-border")->setVisible(false);
+
+        return true;
+    }
+};
+
+#include <Geode/modify/CommentCell.hpp>
+
+class $modify(CommentCell) {
+    void loadFromComment(GJComment* uhh) {
+        CommentCell::loadFromComment(uhh);
+        getChildOfType<CCLayerColor>(this, 0)->setVisible(false);
+        static_cast<CCScale9Sprite*>(getChildOfType<CCLayer>(this, 1)->getChildByID("background"))->setColor(ccc3(0, 0, 0));
+    }
+
+    void draw() {}
 };
