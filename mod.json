@@ -9,22 +9,5 @@
 	"id": "ninxout.iniquitymod",
 	"name": "iniquityMod",
 	"developer": "ninXout",
-	"description": "",
-	"dependencies": [
-        {
-            "id": "cgytrus.menu-shaders",
-            "version": "*",
-            "importance": "required"
-        },
-		{
-			"id": "geode.node-ids",
-            "version": "*",
-            "importance": "required"
-		},
-		{
-			"id": "geode.texture-loader",
-            "version": "*",
-            "importance": "required"
-		}
-    ]
+	"description": ""
 }
